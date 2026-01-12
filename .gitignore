@@ -1,0 +1,10 @@
+# --- Docker ---
+.env
+
+# --- Symfony ---
+/api/.env
+/api/vendor/
+/api/var/
+
+# --- OS ---
+Thumbs.db
