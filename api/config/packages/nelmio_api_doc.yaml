@@ -1,0 +1,10 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Internal Tools API
+            description: API for managing internal SaaS tools
+            version: '1.0.0'
+    areas:
+        default:
+            path_patterns:
+                - ^/api
