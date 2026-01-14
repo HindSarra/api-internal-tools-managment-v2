@@ -6,9 +6,18 @@ use App\Repository\ToolRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+
+
+
 #[ORM\Entity(repositoryClass: ToolRepository::class)]
 class Tool
 {
+        public function __construct()
+    {
+        $now = new \DateTimeImmutable();
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+    }
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -185,3 +194,4 @@ class Tool
         return $this;
     }
 }
+
