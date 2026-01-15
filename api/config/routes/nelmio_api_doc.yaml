@@ -1,16 +1,28 @@
-# Expose your documentation as JSON swagger compliant
-# nelmio_api_doc:
-#     resource: '@NelmioApiDocBundle/Resources/config/routing/swaggerui.xml'
-#     prefix: /api/doc
+# ==========================================
+# Documentation API - NelmioApiDocBundle
+# ==========================================
 
-# JSON OpenAPI
+# Route principale de l'interface Swagger UI
+# Accessible via : http://localhost:8000/api/doc/
+# Affiche la documentation interactive de l’API
+nelmio_api_doc:
+  resource: '@NelmioApiDocBundle/config/routing/swaggerui.xml'
+  prefix: /api/doc
+
+# Redirection automatique de /api/doc vers /api/doc/
+# Évite les erreurs 404 si l’URL est appelée sans le slash final
+app.swagger_ui_redirect:
+  path: /api/doc
+  methods: [GET]
+  controller: Symfony\Bundle\FrameworkBundle\Controller\RedirectController
+  defaults:
+    route: nelmio_api_doc.swagger_ui
+    permanent: true
+# Exposition du schéma OpenAPI au format JSON
+# Accessible via : http://localhost:8000/api/doc.json
+# Utilisé par Swagger UI, des outils externes ou des tests automatisés
 app.swagger:
-    path: /api/doc.json
-    methods: GET
-    defaults: { _controller: nelmio_api_doc.controller.swagger }
-## Requires the Asset component and the Twig bundle
-## $ composer require twig asset
-# app.swagger_ui:
-#     path: /api/doc
-#     methods: GET
-#     defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
+  path: /api/doc.json
+  methods: [GET]
+  defaults:
+    _controller: nelmio_api_doc.controller.swagger
