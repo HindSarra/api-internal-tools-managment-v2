@@ -93,4 +93,85 @@ final class AnalyticsController
             ],
         ]);
     }
+    #[Route('/api/analytics/tools-by-category', name: 'analytics_tools_by_category', methods: ['GET'])]
+     public function getToolsByCategory(
+    AnalyticsRepository $analyticsRepository
+): JsonResponse {
+    $totalCompanyCost = $analyticsRepository->getTotalCompanyCostForActiveTools();
+    $categoryRows = $analyticsRepository->getCategoryAggregatesForActiveTools();
+
+    if ($totalCompanyCost <= 0.0 && count($categoryRows) === 0) {
+        return new JsonResponse([
+            'data' => [],
+            'message' => 'No analytics data available - ensure tools data exists',
+            'insights' => [
+                'most_expensive_category' => null,
+                'most_efficient_category' => null,
+            ],
+        ]);
+    }
+
+    $data = [];
+
+    foreach ($categoryRows as $row) {
+        $categoryName = (string) $row['category_name'];
+        $toolsCount = (int) $row['tools_count'];
+        $totalCost = round((float) $row['total_cost'], 2);
+        $totalUsers = (int) $row['total_users'];
+
+        $percentageOfBudget = 0.0;
+        if ($totalCompanyCost > 0.0) {
+            $percentageOfBudget = round(($totalCost / $totalCompanyCost) * 100, 1);
+        }
+
+        $averageCostPerUser = null;
+        if ($totalUsers > 0) {
+            $averageCostPerUser = round($totalCost / $totalUsers, 2);
+        }
+
+        $data[] = [
+            'category_name' => $categoryName,
+            'tools_count' => $toolsCount,
+            'total_cost' => $totalCost,
+            'total_users' => $totalUsers,
+            'percentage_of_budget' => $percentageOfBudget,
+            'average_cost_per_user' => $averageCostPerUser,
+        ];
+    }
+
+    // Insights
+    $mostExpensiveCategory = null;
+    if (count($data) > 0) {
+        // Already ordered by total_cost DESC, but we compute safely
+        $sortedByCost = $data;
+        usort($sortedByCost, static fn (array $a, array $b): int => $b['total_cost'] <=> $a['total_cost']);
+        $mostExpensiveCategory = (string) $sortedByCost[0]['category_name'];
+    }
+
+    // Most efficient = lowest average_cost_per_user (exclude categories with null)
+    $categoriesWithUsers = array_values(array_filter(
+        $data,
+        static fn (array $item): bool => $item['average_cost_per_user'] !== null
+    ));
+
+    $mostEfficientCategory = null;
+    if (count($categoriesWithUsers) > 0) {
+        usort($categoriesWithUsers, static function (array $a, array $b): int {
+            if ($a['average_cost_per_user'] === $b['average_cost_per_user']) {
+                return strcmp((string) $a['category_name'], (string) $b['category_name']);
+            }
+            return $a['average_cost_per_user'] <=> $b['average_cost_per_user'];
+        });
+        $mostEfficientCategory = (string) $categoriesWithUsers[0]['category_name'];
+    }
+
+    return new JsonResponse([
+        'data' => $data,
+        'insights' => [
+            'most_expensive_category' => $mostExpensiveCategory,
+            'most_efficient_category' => $mostEfficientCategory,
+        ],
+    ]);
+}
+
 }

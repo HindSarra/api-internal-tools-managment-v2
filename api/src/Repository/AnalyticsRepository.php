@@ -70,4 +70,36 @@ final class AnalyticsRepository extends ServiceEntityRepository
 
         return $rows;
     }
+    /**
+ * @return array<int, array{
+ *   category_name: string,
+ *   tools_count: mixed,
+ *   total_cost: mixed,
+ *   total_users: mixed
+ * }>
+ */
+public function getCategoryAggregatesForActiveTools(): array
+{
+    $queryBuilder = $this->createQueryBuilder('tool');
+
+    // JOIN with Category entity via tool.category relation
+    $queryBuilder->innerJoin('tool.category', 'category');
+
+    $queryBuilder->select('category.name AS category_name');
+    $queryBuilder->addSelect('COUNT(tool.id) AS tools_count');
+    $queryBuilder->addSelect('COALESCE(SUM(tool.monthlyCost), 0) AS total_cost');
+    $queryBuilder->addSelect('COALESCE(SUM(tool.activeUsersCount), 0) AS total_users');
+
+    $queryBuilder->andWhere('tool.status = :status');
+    $queryBuilder->setParameter('status', 'active');
+
+    $queryBuilder->groupBy('category.name');
+    $queryBuilder->orderBy('total_cost', 'DESC');
+
+    /** @var array<int, array{category_name: string, tools_count: mixed, total_cost: mixed, total_users: mixed}> $rows */
+    $rows = $queryBuilder->getQuery()->getArrayResult();
+
+    return $rows;
+}
+
 }
